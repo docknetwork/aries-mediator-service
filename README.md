@@ -52,7 +52,7 @@ To build/start this mediator process, run (assuming you are in the project direc
 ./manage build --controller
 ./manage start --logs --controller
 ```
-
+## Deploy to ECR
 
 # === Old Docs ===
 
@@ -148,11 +148,11 @@ In order to create the database, an admin account account and password must be p
 
 For the production environment, additional controls will be put in place to secure the wallet and postgres credentials. (TBD)
 
-## Building
+## Building and Deploying
 
-The ECR domain that we use for our test environment is:
+The ECR domain that we use for our test environment is in the AWS `Relay-Service-Test` account:
 
-`707906211298.dkr.ecr.us-east-2.amazonaws.com`
+`167736496719.dkr.ecr.us-east-2.amazonaws.com`
 
 1. Ensure Docker and the AWS CLI are installed. See also: [Getting Started with Amazon ECR](http://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html). You can use
 a separate profile for the indicio-tech account by creating a directory for the same and

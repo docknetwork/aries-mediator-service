@@ -1,0 +1,20 @@
+FROM bcgovimages/von-image:py36-1.16-1
+
+USER root
+
+RUN mkdir -p /acapy-mediator
+WORKDIR /acapy-mediator
+
+USER $user
+
+COPY acapy/requirements-latest.txt ./
+RUN pip install -r requirements-latest.txt
+
+# Copy the necessary files from the mediator sub-folder
+ADD dock/run_mediator.sh run_mediator.sh
+RUN chmod +x run_mediator.sh
+COPY acapy/configs configs
+
+RUN aca-py --version > ./acapy-version.txt
+
+ENTRYPOINT ["bash", "./run_mediator.sh"]

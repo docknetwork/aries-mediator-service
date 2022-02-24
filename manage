@@ -14,6 +14,7 @@ usage() {
   cat <<-EOF
       Usage: $0 [command] [options]
       Commands:
+      publish     - Build and publish the mediator image
       build       - Build the mediator docker images
       start | up  - Run mediator
                     You can run "$0 --logs" to tail the docker log files interactively
@@ -24,6 +25,15 @@ usage() {
       rm          - Stop mediator and remove volumes
 EOF
   exit 1
+}
+
+checkDependencies() {
+    if ! command -v docker
+  then
+      echo "docker is required"
+      exit 1
+  fi
+
 }
 
 toLower() {
@@ -53,17 +63,13 @@ exportEnvironment() {
   done
 
   export LOG_LEVEL=${LOG_LEVEL:-INFO}
-  export MEDIATOR_AGENT_HTTP_IN_PORT=3000
-  export MEDIATOR_AGENT_WS_IN_PORT=3001
-
+  export MEDIATOR_AGENT_HTTP_IN_PORT=8000
+  export MEDIATOR_AGENT_WS_IN_PORT=8010
+  export ENV="Docker"
 
   if [ -z "${PWD_HOST_FQDN}" ]; then
       export DOCKERHOST=$(getDockerHost)
-      export ENV=local
-      export MEDIATOR_ENDPOINT_URL=http://${DOCKERHOST}:${MEDIATOR_AGENT_HTTP_IN_PORT}
-      if  [ ! -z "${USE_TUNNEL}" ]; then
-          export ENV=local_tunnel
-      fi
+      export MEDIATOR_ENDPOINT_URL="[http://localhost:8000, ws://localhost:8010]" #http://${DOCKERHOST}:${MEDIATOR_AGENT_HTTP_IN_PORT}
   else
       PWD_HOST="${PWD_HOST_FQDN}"
       if [ "$PWD_HOST_FQDN" = "labs.play-with-docker.com" ]; then
@@ -82,9 +88,9 @@ exportEnvironment() {
   export MEDIATOR_AGENT_HTTP_ADMIN_PORT=3002
   export MEDIATOR_WALLET_NAME=${MEDIATOR_WALLET_NAME:-mediator}
   export MEDIATOR_WALLET_KEY=${MEDIATOR_WALLET_KEY:-testing}
-  export MEDIATOR_AGENT_ADMIN_URL="http://mediator:${MEDIATOR_AGENT_HTTP_ADMIN_PORT}"
+  export MEDIATOR_AGENT_ADMIN_URL="http://localhost:${MEDIATOR_AGENT_HTTP_ADMIN_PORT}"
 
-  export MEDIATOR_AGENT_LABEL=Mediator
+  export MEDIATOR_AGENT_LABEL="Relay Service"
   export MEDIATOR_AGENT_ADMIN_API_KEY="7gdmVBiJalMj52Oum50yD8neu/nxmv3/DTWcZPyKZ4K2UdNNwSPKgg=="
   export MEDIATOR_AGENT_ADMIN_MODE="admin-insecure-mode"
   if [ ! -z "${MEDIATOR_AGENT_ADMIN_API_KEY}" ]; then
@@ -102,7 +108,9 @@ exportEnvironment() {
     export MEDIATOR_ALIAS="Controller"
   else
     # agent is started in "--auto" mode
+    echo "Starting in --auto mode"
     export MEDIATOR_ARG_FILE=./configs/mediator-auto-accept.yml
+    export MEDIATOR_DOCKERFILE=acapy/Dockerfile.acapy
     export DEMO_CONTROLLER=
     export MEDIATOR_CONTROLLER_URL=
     export MEDIATOR_CONTROLLER_ADMIN_API_KEY=
@@ -110,13 +118,13 @@ exportEnvironment() {
     export MEDIATOR_ALIAS=
   fi
 
-  export POSTGRESQL_HOST=db
+  export POSTGRESQL_HOST=relay-service-mediator.cpcwnfbzdsiy.us-east-2.rds.amazonaws.com
   export POSTGRESQL_PORT=5432
   export POSTGRESQL_USER=postgres
-  export POSTGRESQL_PASSWORD=development
+  export POSTGRESQL_PASSWORD="Gf06M!$xmS23CqllM5"
   export POSTGRESQL_DATABASE=postgres
   export POSTGRESQL_ADMIN_USER=postgres
-  export POSTGRESQL_ADMIN_PASSWORD=development
+  export POSTGRESQL_ADMIN_PASSWORD="Gf06M!$xmS23CqllM5"
 
 }
 
@@ -149,6 +157,8 @@ function logs() {
 
 # =================================================================================================================
 
+checkDependencies
+
 pushd ${SCRIPT_HOME} >/dev/null
 COMMAND=$(toLower ${1})
 shift || COMMAND=usage
@@ -157,21 +167,33 @@ case "${COMMAND}" in
 build)
   exportEnvironment "$@"
   if [ "$ENV" = "local" ]; then
-      docker-compose build ngrok ngrok_ws mediator db ${DEMO_CONTROLLER}
+      docker-compose build mediator  
   elif [ "$ENV" = "local_tunnel" ]; then
-      docker-compose build tunnel tunnel_ws mediator db ${DEMO_CONTROLLER}
+      docker-compose build tunnel tunnel_ws mediator  ${DEMO_CONTROLLER}
   else
-      docker-compose build mediator db ${DEMO_CONTROLLER}
+      docker-compose build mediator  ${DEMO_CONTROLLER}
   fi
+  ;;
+publish)
+  if ! command -v aws
+  then
+      echo "aws cli is required for publishing the docker image to ECR"
+      exit
+  fi
+
+  exportEnvironment "$@"
+  export MEDIATOR_DOCKERFILE=dock/Dockerfile.prod
+  docker-compose -f ./docker-compose-dock.yml build mediator 
+  
   ;;
 start|up)
   exportEnvironment "$@"
   if [ "$ENV" = "local" ]; then
-      docker-compose up -d ngrok ngrok_ws mediator db ${DEMO_CONTROLLER}
+      docker-compose up -d mediator 
   elif [ "$ENV" = "local_tunnel" ]; then
-      docker-compose up -d tunnel tunnel_ws mediator db ${DEMO_CONTROLLER}
+      docker-compose up -d tunnel tunnel_ws mediator  ${DEMO_CONTROLLER}
   else
-      docker-compose up -d mediator db ${DEMO_CONTROLLER}
+      docker-compose up -d mediator  ${DEMO_CONTROLLER}
   fi
   logs
   echo "Run './manage logs' for logs"

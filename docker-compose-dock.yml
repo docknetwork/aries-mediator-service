@@ -1,0 +1,40 @@
+version: '3.3'
+services:
+  mediator:
+    image: dock-mediator:${MEDIATOR_TAG:-latest}
+    build:
+      context: .
+      dockerfile: ${MEDIATOR_DOCKERFILE}
+    hostname: mediator
+    restart: unless-stopped
+    environment:
+      - ENV=${ENV:-local}
+      - POSTGRESQL_HOST=${POSTGRESQL_HOST}
+      - POSTGRESQL_PORT=${POSTGRESQL_PORT:-5432}
+      - ACAPY_WALLET_STORAGE_CONFIG={"url":"${POSTGRESQL_HOST}:${POSTGRESQL_PORT:-5432}","wallet_scheme":"DatabasePerWallet"}
+      - ACAPY_WALLET_STORAGE_CREDS={"account":"${POSTGRESQL_USER:-postgres}","password":"${POSTGRESQL_PASSWORD:-development}","admin_account":"${POSTGRESQL_ADMIN_USER:-postgres}","admin_password":"${POSTGRESQL_ADMIN_PASSWORD:-development}"}
+      - ACAPY_WALLET_NAME=${MEDIATOR_WALLET_NAME:-mediator}
+      - ACAPY_WALLET_KEY=${MEDIATOR_WALLET_KEY:-testing}
+      - MEDIATOR_AGENT_HTTP_IN_PORT=${MEDIATOR_AGENT_HTTP_IN_PORT:-3000}
+      - MEDIATOR_AGENT_WS_IN_PORT=${MEDIATOR_AGENT_WS_IN_PORT:-3001}
+      - MEDIATOR_AGENT_HTTP_ADMIN_PORT=${MEDIATOR_AGENT_HTTP_ADMIN_PORT:-3002}
+      - MEDIATOR_AGENT_ADMIN_MODE=${MEDIATOR_AGENT_ADMIN_MODE:-admin-api-key 7gdmVBiJalMj52Oum50yD8neu/nxmv3/DTWcZPyKZ4K2UdNNwSPKgg==}
+      - MEDIATOR_AGENT_LABEL=${MEDIATOR_AGENT_LABEL:-Mediator}
+      - MEDIATOR_ENDPOINT_URL=${MEDIATOR_ENDPOINT_URL:-localhost}
+      - MEDIATOR_ARG_FILE=${MEDIATOR_ARG_FILE:-./configs/mediator-auto-accept.yml}
+      - MEDIATOR_CONTROLLER_WEBHOOK=${MEDIATOR_CONTROLLER_WEBHOOK}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - ${MEDIATOR_AGENT_HTTP_ADMIN_PORT:-3002}:${MEDIATOR_AGENT_HTTP_ADMIN_PORT:-3002}
+      - ${MEDIATOR_AGENT_HTTP_IN_PORT:-3000}:${MEDIATOR_AGENT_HTTP_IN_PORT:-3000}
+      - ${MEDIATOR_AGENT_WS_IN_PORT:-3001}:${MEDIATOR_AGENT_WS_IN_PORT:-3001}
+    networks:
+      - mediator-network
+
+#Docker Networks
+networks:
+  mediator-network:
+
+volumes:
+  agency-wallet:
+  mediator-controller-data:
