@@ -60,21 +60,34 @@ elif [[ "${ENV}" == "local_tunnel" ]]; then
     export ACAPY_ENDPOINT="$ACAPY_ENDPOINT"
 
 else
-    export ACAPY_ENDPOINT=${MEDIATOR_ENDPOINT_URL}
+    export ACAPY_ENDPOINT="[http://$MEDIATOR_AGENT_HOST:8000, ws://$MEDIATOR_AGENT_HOST:8010]"
 fi
 
 echo "Starting aca-py agent with endpoint [$ACAPY_ENDPOINT] ... with config ${MEDIATOR_ARG_FILE}"
+
+export POSTGRESQL_URL="${POSTGRESQL_HOST}:${POSTGRESQL_PORT}"
 exec aca-py start --auto-provision \
-    --arg-file ${MEDIATOR_ARG_FILE} \
+    --no-ledger \
+    --open-mediation \
+    --enable-undelivered-queue \
+    --debug-connections \
+    --connections-invite \
+    --invite-label "${MEDIATOR_AGENT_LABEL}" \
+    --invite-multi-use \
+    --auto-accept-invites \
+    --auto-accept-requests \
+    --auto-ping-connection \
     --label "${MEDIATOR_AGENT_LABEL}" \
-    --inbound-transport http 0.0.0.0 ${MEDIATOR_AGENT_HTTP_IN_PORT} \
-    --inbound-transport ws 0.0.0.0 ${MEDIATOR_AGENT_WS_IN_PORT} \
+    --inbound-transport http 0.0.0.0 8000 \
+    --inbound-transport ws 0.0.0.0 8010 \
     --outbound-transport ws \
     --outbound-transport http \
+    --wallet-name '${MEDIATOR_WALLET_NAME}'
+    --wallet-key '${MEDIATOR_WALLET_KEY}'
     --wallet-type indy \
     --wallet-storage-type postgres_storage \
-  --wallet-storage-config '{"url":"relay-service-mediator.cpcwnfbzdsiy.us-east-2.rds.amazonaws.com:5432","max_connections":5}' \
-  --wallet-storage-creds '{"account":"postgres","password":"Gf06M!$xmS23CqllM5","admin_account":"postgres","admin_password":"Gf06M!$xmS23CqllM5"}' \
+    --wallet-storage-config '{"url":${POSTGRESQL_URL},"max_connections":5}' \
+    --wallet-storage-creds '{"account":${POSTGRESQL_USER},"password":${POSTGRESQL_PASSWORD},"admin_account":${POSTGRESQL_ADMIN_USER},"admin_password":${POSTGRESQL_ADMIN_PASSWORD}}' \
     --admin 0.0.0.0 ${MEDIATOR_AGENT_HTTP_ADMIN_PORT} \
     --${MEDIATOR_AGENT_ADMIN_MODE} \
     ${MEDIATOR_CONTROLLER_WEBHOOK}

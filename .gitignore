@@ -1,7 +1,7 @@
 .aws
 *.db-wal
 *.db-shm
-.env
+.env*
 postgres-db
 node_modules/
 .DS_Store

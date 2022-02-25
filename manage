@@ -183,7 +183,7 @@ publish)
 
   exportEnvironment "$@"
   export MEDIATOR_DOCKERFILE=dock/Dockerfile.prod
-  docker-compose -f ./docker-compose-dock.yml build mediator 
+  docker-compose -f ./docker-compose-dock.yml build dock-mediator 
   
   ;;
 start|up)
@@ -193,14 +193,14 @@ start|up)
   elif [ "$ENV" = "local_tunnel" ]; then
       docker-compose up -d tunnel tunnel_ws mediator  ${DEMO_CONTROLLER}
   else
-      docker-compose up -d mediator  ${DEMO_CONTROLLER}
+      docker-compose --env-file dock/env.example up -d mediator  ${DEMO_CONTROLLER}
   fi
   logs
   echo "Run './manage logs' for logs"
   ;;
 logs)
   exportEnvironment "$@"
-  docker-compose logs -f
+  docker-compose --env-file dock/env.example logs -f
   ;;
 stop|down)
   exportEnvironment "$@"

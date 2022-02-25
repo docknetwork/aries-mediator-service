@@ -1,3 +1,19 @@
+# Dock Relay Service
+
+## Build container image
+`./manage publish`
+
+## Run locally
+1. Configure `dock/.env-test`
+2. Run `./run-dock.sh`
+
+## ECR
+The ECR domain that we use for our test environment is in the AWS `Relay-Service-Test` account:
+
+`167736496719.dkr.ecr.us-east-2.amazonaws.com`
+
+-- ORIGINAL ACA-PY README BELOW ---------------------------------------------------------
+
 # Aries Mediator Service
 
 This repository provides a simple process for a developer to run an Aries mediator agent (currently based on Aca-py).
