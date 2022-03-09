@@ -82,8 +82,8 @@ exec aca-py start --auto-provision \
     --inbound-transport ws 0.0.0.0 8010 \
     --outbound-transport ws \
     --outbound-transport http \
-    --wallet-name '${MEDIATOR_WALLET_NAME}'
-    --wallet-key '${MEDIATOR_WALLET_KEY}'
+    --wallet-name "${MEDIATOR_WALLET_NAME}"
+    --wallet-key "${MEDIATOR_WALLET_KEY}"
     --wallet-type indy \
     --wallet-storage-type postgres_storage \
     --wallet-storage-config '{"url":${POSTGRESQL_URL},"max_connections":5}' \
